@@ -287,7 +287,7 @@ class GradeManagementView:
         ctk.CTkLabel(grade_frame, text="Subject:", font=ctk.CTkFont(size=14)).grid(row=0, column=0, padx=10, pady=10, sticky="e")
         self.subject_combo = ctk.CTkComboBox(grade_frame, values=self.SUBJECTS, width=250)
         self.subject_combo.grid(row=0, column=1, padx=10, pady=10)
-        self.subject_combo.bind('<<ComboboxSelected>>', self.update_coefficient_display)
+        self.subject_combo.bind(' ', self.update_coefficient_display)
         
         ctk.CTkLabel(grade_frame, text="Coefficient:", font=ctk.CTkFont(size=14)).grid(row=0, column=2, padx=10, pady=10, sticky="e")
         self.coefficient_label = ctk.CTkLabel(grade_frame, text="", font=ctk.CTkFont(size=14, weight="bold"))
@@ -421,7 +421,7 @@ class GradeManagementView:
                 avg_color = "green" if weighted_avg >= 10 else "orange" if weighted_avg >= 7 else "red"
                 ctk.CTkLabel(
                     card1, 
-                    text=f"{weighted_avg:.2f}%", 
+                    text=f"{weighted_avg:.2f}", 
                     font=ctk.CTkFont(size=28, weight="bold"),
                     text_color=avg_color
                 ).pack(pady=5)
@@ -446,7 +446,7 @@ class GradeManagementView:
                 ).pack(side="left")
                 ctk.CTkLabel(
                     sem_frame, 
-                    text=f"{semester_averages['semester1']:.2f}%" if semester_averages['semester1'] > 0 else "N/A", 
+                    text=f"{semester_averages['semester1']:.2f}" if semester_averages['semester1'] > 0 else "N/A", 
                     font=ctk.CTkFont(size=12, weight="bold"),
                     text_color=s1_color
                 ).pack(side="left", padx=(0, 10))
@@ -458,7 +458,7 @@ class GradeManagementView:
                 ).pack(side="left")
                 ctk.CTkLabel(
                     sem_frame, 
-                    text=f"{semester_averages['semester2']:.2f}%" if semester_averages['semester2'] > 0 else "N/A", 
+                    text=f"{semester_averages['semester2']:.2f}" if semester_averages['semester2'] > 0 else "N/A", 
                     font=ctk.CTkFont(size=12, weight="bold"),
                     text_color=s2_color
                 ).pack(side="left")
@@ -471,7 +471,7 @@ class GradeManagementView:
                 overall_color = "green" if semester_averages['overall'] >= 10 else "orange" if semester_averages['overall'] >= 7 else "red"
                 ctk.CTkLabel(
                     card3, 
-                    text=f"{semester_averages['overall']:.2f}%", 
+                    text=f"{semester_averages['overall']:.2f}", 
                     font=ctk.CTkFont(size=28, weight="bold"),
                     text_color=overall_color
                 ).pack(pady=5)
