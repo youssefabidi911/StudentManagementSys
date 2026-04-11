@@ -1,0 +1,13 @@
+# Core dependencies for Student Management System
+
+# GUI Framework
+customtkinter>=5.2.0
+
+# Database
+mysql-connector-python>=8.0.33
+
+# Environment Variables Management
+python-dotenv>=1.0.0
+
+# Additional utilities 
+# pillow>=10.0.0  # For image handling 
