@@ -127,7 +127,7 @@ class LoginWindow:
             self.window.destroy()
             self.on_login_success()
         else:
-            messagebox.showerror("Login Failed", "Invalid username or password!\n\nDefault credentials:\nAdmin: admin / youssef123\nTeacher: teacher1 / teacher123")
+            messagebox.showerror("Login Failed", "Invalid username or password!")
             self.password_entry.delete(0, 'end')
             self.username_entry.focus()
     
