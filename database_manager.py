@@ -3,15 +3,21 @@ import mysql.connector
 from mysql.connector import Error
 from tkinter import messagebox
 import hashlib
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 class DatabaseManager:
     
     def __init__(self):
+        # Get database configuration from environment variables
         self.mysql_config = {
-            'host': 'localhost',
-            'user': 'root',
-            'password': '1953',
-            'database': 'student_management_db'
+            'host': os.getenv('DB_HOST', 'localhost'),
+            'user': os.getenv('DB_USER', 'root'),
+            'password': os.getenv('DB_PASSWORD', ''),
+            'database': os.getenv('DB_NAME', 'student_management_db')
         }
         self.conn = None
         self.cursor = None
@@ -103,7 +109,7 @@ class DatabaseManager:
             self.cursor = self.conn.cursor(dictionary=True)
             self.is_connected = True
             
-            # Create default users
+            # Create default users from environment variables
             self.create_default_users()
             
             print("MySQL Database connected successfully!")
@@ -113,30 +119,53 @@ class DatabaseManager:
             messagebox.showwarning("Database Warning", 
                 f"Could not connect to MySQL: {e}\n\n"
                 "The application will run in offline mode with file-based storage.\n"
-                "Please make sure MySQL is running and credentials are correct.")
+                "Please check your .env file and make sure MySQL is running.")
             self.is_connected = False
         except Exception as e:
             print(f"Unexpected error: {e}")
             self.is_connected = False
     
     def create_default_users(self):
+        """Create default users from environment variables"""
         try:
             def hash_password(password):
                 return hashlib.sha256(password.encode()).hexdigest()
             
-            # Check if admin exists
-            admin_check = self.fetch_one("SELECT id FROM users WHERE username = 'admin'")
-            if not admin_check:
-                query = "INSERT INTO users (username, password, full_name, email, role) VALUES (%s, %s, %s, %s, %s)"
-                self.execute_query(query, ("admin", hash_password("youssef123"), "Administrator", "admin@school.com", "admin"))
-                print("Default admin account created: admin / youssef123")
+            # Get admin credentials from environment variables
+            admin_username = os.getenv('ADMIN_USERNAME', 'admin')
+            admin_password = os.getenv('ADMIN_PASSWORD')
+            admin_full_name = os.getenv('ADMIN_FULL_NAME', 'Administrator')
+            admin_email = os.getenv('ADMIN_EMAIL', 'admin@school.com')
             
-            # Check if teacher exists
-            teacher_check = self.fetch_one("SELECT id FROM users WHERE username = 'teacher1'")
-            if not teacher_check:
-                query = "INSERT INTO users (username, password, full_name, email, role) VALUES (%s, %s, %s, %s, %s)"
-                self.execute_query(query, ("teacher1", hash_password("teacher123"), "John Smith", "john.smith@school.com", "teacher"))
-                print("Default teacher account created: teacher1 / teacher123")
+            # Get teacher credentials from environment variables
+            teacher_username = os.getenv('TEACHER_USERNAME', 'teacher1')
+            teacher_password = os.getenv('TEACHER_PASSWORD')
+            teacher_full_name = os.getenv('TEACHER_FULL_NAME', 'John Smith')
+            teacher_email = os.getenv('TEACHER_EMAIL', 'john.smith@school.com')
+            
+            # Create admin user if password is set
+            if admin_password:
+                admin_check = self.fetch_one("SELECT id FROM users WHERE username = %s", (admin_username,))
+                if not admin_check:
+                    query = "INSERT INTO users (username, password, full_name, email, role) VALUES (%s, %s, %s, %s, %s)"
+                    self.execute_query(query, (admin_username, hash_password(admin_password), admin_full_name, admin_email, "admin"))
+                    print(f"Default admin account created: {admin_username}")
+                else:
+                    print(f"Admin user '{admin_username}' already exists")
+            else:
+                print("WARNING: ADMIN_PASSWORD not set in .env file! Admin user not created.")
+            
+            # Create teacher user if password is set
+            if teacher_password:
+                teacher_check = self.fetch_one("SELECT id FROM users WHERE username = %s", (teacher_username,))
+                if not teacher_check:
+                    query = "INSERT INTO users (username, password, full_name, email, role) VALUES (%s, %s, %s, %s, %s)"
+                    self.execute_query(query, (teacher_username, hash_password(teacher_password), teacher_full_name, teacher_email, "teacher"))
+                    print(f"Default teacher account created: {teacher_username}")
+                else:
+                    print(f"Teacher user '{teacher_username}' already exists")
+            else:
+                print("WARNING: TEACHER_PASSWORD not set in .env file! Teacher user not created.")
                 
         except Exception as e:
             print(f"Error creating default users: {e}")
