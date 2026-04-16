@@ -1,4 +1,3 @@
-# login_window.py
 import customtkinter as ctk
 from tkinter import messagebox
 
@@ -9,27 +8,31 @@ class LoginWindow:
         self.auth_manager = auth_manager
         self.on_login_success = on_login_success
         self.window = None
+        self.password_visible = False
         self.create_login_window()
-        
-        
     
     def create_login_window(self):
         self.window = ctk.CTkToplevel(self.parent)
         self.window.title("Teacher Login - Student Management System")
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x800")
         self.window.resizable(True, True)
         
         self.window.transient(self.parent)
         self.window.grab_set()
-        
         self.window.focus_force()
+        
+        # Center the window
+        self.window.update_idletasks()
+        x = (self.window.winfo_screenwidth() // 2) - (1400 // 2)
+        y = (self.window.winfo_screenheight() // 2) - (800 // 2)
+        self.window.geometry(f"1400x800+{x}+{y}")
         
         main_frame = ctk.CTkFrame(self.window, corner_radius=15)
         main_frame.pack(fill="both", expand=True, padx=30, pady=30)
         
         title_label = ctk.CTkLabel(
             main_frame,
-            text="📚 Student Management System",
+            text="Student Management System",
             font=ctk.CTkFont(size=24, weight="bold")
         )
         title_label.pack(pady=30)
@@ -42,7 +45,6 @@ class LoginWindow:
         )
         subtitle_label.pack(pady=(0, 30))
         
-        # Center the form
         form_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         form_frame.pack(pady=20)
         
@@ -57,15 +59,28 @@ class LoginWindow:
         self.username_entry.pack(pady=(0, 20))
         
         ctk.CTkLabel(form_frame, text="Password", font=ctk.CTkFont(size=14)).pack(anchor="w", pady=(0, 5))
+        
+        password_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
+        password_frame.pack(pady=(0, 20))
+        
         self.password_entry = ctk.CTkEntry(
-            form_frame,
-            width=300,
+            password_frame,
+            width=260,
             height=40,
             font=ctk.CTkFont(size=14),
             placeholder_text="Enter your password",
             show="•"
         )
-        self.password_entry.pack(pady=(0, 20))
+        self.password_entry.pack(side="left", padx=(0, 5))
+        
+        self.toggle_btn = ctk.CTkButton(
+            password_frame,
+            text="👁",
+            width=35,
+            height=40,
+            command=self.toggle_password_visibility
+        )
+        self.toggle_btn.pack(side="left")
         
         self.login_btn = ctk.CTkButton(
             form_frame,
@@ -94,19 +109,22 @@ class LoginWindow:
         
         ctk.CTkLabel(
             info_frame,
-            text="Default Credentials:",
-            font=ctk.CTkFont(size=12, weight="bold")
-        ).pack()
-        
-        ctk.CTkLabel(
-            info_frame,
-            text="Admin: admin / ********\nTeacher: teacher1 / ********",
+            text=" ",
             font=ctk.CTkFont(size=11),
             text_color="gray60"
         ).pack()
         
         self.username_entry.bind('<Return>', lambda event: self.password_entry.focus())
         self.password_entry.bind('<Return>', lambda event: self.login())
+    
+    def toggle_password_visibility(self):
+        self.password_visible = not self.password_visible
+        if self.password_visible:
+            self.password_entry.configure(show="")
+            self.toggle_btn.configure(text="👁‍🗨")
+        else:
+            self.password_entry.configure(show="•")
+            self.toggle_btn.configure(text="👁")
     
     def login(self):
         username = self.username_entry.get().strip()
@@ -127,17 +145,22 @@ class LoginWindow:
             self.window.destroy()
             self.on_login_success()
         else:
-            messagebox.showerror("Login Failed", "Invalid username or password!")
+            messagebox.showerror("Login Failed", "Invalid username or password!\n\nPlease contact your system administrator.")
             self.password_entry.delete(0, 'end')
             self.username_entry.focus()
     
     def show_change_password(self):
         dialog = ctk.CTkToplevel(self.window)
         dialog.title("Change Password")
-        dialog.geometry("400x650")
+        dialog.geometry("450x550")
         dialog.resizable(False, False)
         dialog.transient(self.window)
         dialog.grab_set()
+        
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (450 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (550 // 2)
+        dialog.geometry(f"450x550+{x}+{y}")
         
         frame = ctk.CTkFrame(dialog, corner_radius=10)
         frame.pack(fill="both", expand=True, padx=20, pady=20)
@@ -148,20 +171,20 @@ class LoginWindow:
             font=ctk.CTkFont(size=20, weight="bold")
         ).pack(pady=20)
         
-        ctk.CTkLabel(frame, text="Username").pack(anchor="w", padx=20, pady=(10, 0))
-        username_entry = ctk.CTkEntry(frame, width=300)
+        ctk.CTkLabel(frame, text="Username", font=ctk.CTkFont(size=14)).pack(anchor="w", padx=20, pady=(10, 0))
+        username_entry = ctk.CTkEntry(frame, width=350, height=40)
         username_entry.pack(pady=5, padx=20)
         
-        ctk.CTkLabel(frame, text="Current Password").pack(anchor="w", padx=20, pady=(10, 0))
-        old_pwd_entry = ctk.CTkEntry(frame, width=300, show="•")
+        ctk.CTkLabel(frame, text="Current Password", font=ctk.CTkFont(size=14)).pack(anchor="w", padx=20, pady=(10, 0))
+        old_pwd_entry = ctk.CTkEntry(frame, width=350, height=40, show="•")
         old_pwd_entry.pack(pady=5, padx=20)
         
-        ctk.CTkLabel(frame, text="New Password (min 6 characters)").pack(anchor="w", padx=20, pady=(10, 0))
-        new_pwd_entry = ctk.CTkEntry(frame, width=300, show="•")
+        ctk.CTkLabel(frame, text="New Password (min 6 characters)", font=ctk.CTkFont(size=14)).pack(anchor="w", padx=20, pady=(10, 0))
+        new_pwd_entry = ctk.CTkEntry(frame, width=350, height=40, show="•")
         new_pwd_entry.pack(pady=5, padx=20)
         
-        ctk.CTkLabel(frame, text="Confirm New Password").pack(anchor="w", padx=20, pady=(10, 0))
-        confirm_pwd_entry = ctk.CTkEntry(frame, width=300, show="•")
+        ctk.CTkLabel(frame, text="Confirm New Password", font=ctk.CTkFont(size=14)).pack(anchor="w", padx=20, pady=(10, 0))
+        confirm_pwd_entry = ctk.CTkEntry(frame, width=350, height=40, show="•")
         confirm_pwd_entry.pack(pady=5, padx=20)
         
         def change_password():
@@ -192,7 +215,8 @@ class LoginWindow:
             frame,
             text="Change Password",
             command=change_password,
-            height=40
+            height=40,
+            width=200
         ).pack(pady=20)
         
         ctk.CTkButton(
@@ -201,5 +225,6 @@ class LoginWindow:
             command=dialog.destroy,
             fg_color="gray",
             hover_color="darkgray",
-            height=35
+            height=35,
+            width=200
         ).pack()
