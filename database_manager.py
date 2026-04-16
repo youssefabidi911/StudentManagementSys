@@ -1,4 +1,3 @@
-# database_manager.py
 import mysql.connector
 from mysql.connector import Error
 from tkinter import messagebox
@@ -6,13 +5,11 @@ import hashlib
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 class DatabaseManager:
     
     def __init__(self):
-        # Get database configuration from environment variables
         self.mysql_config = {
             'host': os.getenv('DB_HOST', 'localhost'),
             'user': os.getenv('DB_USER', 'root'),
@@ -26,7 +23,6 @@ class DatabaseManager:
     
     def init_database(self):
         try:
-            # First connect without database to create it
             connection = mysql.connector.connect(
                 host=self.mysql_config['host'],
                 user=self.mysql_config['user'],
@@ -35,11 +31,9 @@ class DatabaseManager:
             
             cursor = connection.cursor()
             
-            # Create database if not exists
             cursor.execute(f"CREATE DATABASE IF NOT EXISTS {self.mysql_config['database']}")
             cursor.execute(f"USE {self.mysql_config['database']}")
             
-            # Create students table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS students (
                     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -53,7 +47,6 @@ class DatabaseManager:
                 )
             ''')
             
-            # Create grades table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS grades (
                     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -67,12 +60,10 @@ class DatabaseManager:
                 )
             ''')
             
-            # Add coefficient column if not exists (for existing databases)
             cursor.execute("SHOW COLUMNS FROM grades LIKE 'coefficient'")
             if not cursor.fetchone():
                 cursor.execute("ALTER TABLE grades ADD COLUMN coefficient INT DEFAULT 1 NOT NULL")
             
-            # Create attendance table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS attendance (
                     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -85,7 +76,6 @@ class DatabaseManager:
                 )
             ''')
             
-            # Create users table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS users (
                     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -104,12 +94,10 @@ class DatabaseManager:
             cursor.close()
             connection.close()
             
-            # Now connect to the database
             self.conn = mysql.connector.connect(**self.mysql_config)
             self.cursor = self.conn.cursor(dictionary=True)
             self.is_connected = True
             
-            # Create default users from environment variables
             self.create_default_users()
             
             print("MySQL Database connected successfully!")
@@ -126,46 +114,33 @@ class DatabaseManager:
             self.is_connected = False
     
     def create_default_users(self):
-        """Create default users from environment variables"""
         try:
             def hash_password(password):
                 return hashlib.sha256(password.encode()).hexdigest()
             
-            # Get admin credentials from environment variables
             admin_username = os.getenv('ADMIN_USERNAME', 'admin')
             admin_password = os.getenv('ADMIN_PASSWORD')
             admin_full_name = os.getenv('ADMIN_FULL_NAME', 'Administrator')
             admin_email = os.getenv('ADMIN_EMAIL', 'admin@school.com')
             
-            # Get teacher credentials from environment variables
             teacher_username = os.getenv('TEACHER_USERNAME', 'teacher1')
             teacher_password = os.getenv('TEACHER_PASSWORD')
             teacher_full_name = os.getenv('TEACHER_FULL_NAME', 'John Smith')
             teacher_email = os.getenv('TEACHER_EMAIL', 'john.smith@school.com')
             
-            # Create admin user if password is set
             if admin_password:
                 admin_check = self.fetch_one("SELECT id FROM users WHERE username = %s", (admin_username,))
                 if not admin_check:
                     query = "INSERT INTO users (username, password, full_name, email, role) VALUES (%s, %s, %s, %s, %s)"
                     self.execute_query(query, (admin_username, hash_password(admin_password), admin_full_name, admin_email, "admin"))
                     print(f"Default admin account created: {admin_username}")
-                else:
-                    print(f"Admin user '{admin_username}' already exists")
-            else:
-                print("WARNING: ADMIN_PASSWORD not set in .env file! Admin user not created.")
             
-            # Create teacher user if password is set
             if teacher_password:
                 teacher_check = self.fetch_one("SELECT id FROM users WHERE username = %s", (teacher_username,))
                 if not teacher_check:
                     query = "INSERT INTO users (username, password, full_name, email, role) VALUES (%s, %s, %s, %s, %s)"
                     self.execute_query(query, (teacher_username, hash_password(teacher_password), teacher_full_name, teacher_email, "teacher"))
                     print(f"Default teacher account created: {teacher_username}")
-                else:
-                    print(f"Teacher user '{teacher_username}' already exists")
-            else:
-                print("WARNING: TEACHER_PASSWORD not set in .env file! Teacher user not created.")
                 
         except Exception as e:
             print(f"Error creating default users: {e}")
@@ -286,11 +261,9 @@ class DatabaseManager:
     def get_dashboard_stats(self):
         stats = {}
         
-        # Total students
         result = self.fetch_one("SELECT COUNT(*) as total FROM students")
         stats['total_students'] = result['total'] if result else 0
         
-        # Average grade (weighted)
         result = self.fetch_one("""
             SELECT ROUND(SUM(grade * coefficient) / SUM(coefficient), 2) as weighted_avg
             FROM grades
@@ -298,14 +271,12 @@ class DatabaseManager:
         """)
         stats['avg_grade'] = result['weighted_avg'] if result and result.get('weighted_avg') else 0
         
-        # Present today
         result = self.fetch_one("""
             SELECT COUNT(*) as present FROM attendance 
             WHERE status = 'Present' AND date = CURDATE()
         """)
         stats['today_present'] = result['present'] if result else 0
         
-        # Total subjects
         result = self.fetch_one("SELECT COUNT(DISTINCT subject) as total FROM grades")
         stats['total_subjects'] = result['total'] if result else 0
         
