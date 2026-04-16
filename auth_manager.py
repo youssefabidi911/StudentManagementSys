@@ -1,4 +1,3 @@
-# auth_manager.py
 import hashlib
 import json
 import os
@@ -7,7 +6,6 @@ import mysql.connector
 from mysql.connector import Error
 from dotenv import load_dotenv 
 
-# Load environment variables
 load_dotenv()
 
 class AuthManager:
@@ -35,8 +33,6 @@ class AuthManager:
                     )
                 '''
                 self.db_manager.execute_query(query)
-                
-                # Create initial admin from environment variable if no users exist
                 self.create_initial_admin_from_env()
                 
             else:
@@ -51,13 +47,10 @@ class AuthManager:
             self.create_users_file()
     
     def create_initial_admin_from_env(self):
-        """Create initial admin using credentials from environment variables"""
         try:
-            # Check if any users exist
             user_count = self.db_manager.fetch_one("SELECT COUNT(*) as count FROM users")
             
             if user_count and user_count.get('count', 0) == 0:
-                # Get admin credentials from environment variables
                 admin_username = os.getenv('ADMIN_USERNAME', 'admin')
                 admin_password = os.getenv('ADMIN_PASSWORD')
                 admin_full_name = os.getenv('ADMIN_FULL_NAME', 'System Administrator')
@@ -65,7 +58,6 @@ class AuthManager:
                 
                 if not admin_password:
                     print("WARNING: ADMIN_PASSWORD not set in environment variables!")
-                    print("Please set ADMIN_PASSWORD in .env file or environment variables")
                     return False
                 
                 hashed_password = self.hash_password(admin_password)
@@ -81,76 +73,32 @@ class AuthManager:
                 if result:
                     print(f"Initial admin user '{admin_username}' created successfully!")
                 return result
+            return True
         except Exception as e:
             print(f"Error creating initial admin: {e}")
             return False
     
-    # Rest of your methods remain the same...
-        
-    def init_users_table(self):
-        try:
-            if self.db_manager and hasattr(self.db_manager, 'conn') and self.db_manager.conn:
-                query = '''
-                    CREATE TABLE IF NOT EXISTS users (
-                        id INT PRIMARY KEY AUTO_INCREMENT,
-                        username VARCHAR(50) UNIQUE NOT NULL,
-                        password VARCHAR(255) NOT NULL,
-                        full_name VARCHAR(100) NOT NULL,
-                        email VARCHAR(100),
-                        role VARCHAR(20) DEFAULT 'teacher',
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        last_login TIMESTAMP NULL,
-                        is_active BOOLEAN DEFAULT TRUE
-                    )
-                '''
-                self.db_manager.execute_query(query)
-                
-                # Check if admin exists
-                admin_check = self.db_manager.fetch_one("SELECT id FROM users WHERE username = 'admin'")
-                if not admin_check:
-                    hashed_password = self.hash_password("youssef123")
-                    query = '''
-                        INSERT INTO users (username, password, full_name, email, role)
-                        VALUES (%s, %s, %s, %s, %s)
-                    '''
-                    self.db_manager.execute_query(query, ("admin", hashed_password, "Administrator", "admin@school.com", "admin"))
-                    print("Default admin account created: admin / youssef123")
-                    
-                # Check if teacher exists
-                teacher_check = self.db_manager.fetch_one("SELECT id FROM users WHERE username = 'teacher1'")
-                if not teacher_check:
-                    hashed_password = self.hash_password("teacher123")
-                    query = '''
-                        INSERT INTO users (username, password, full_name, email, role)
-                        VALUES (%s, %s, %s, %s, %s)
-                    '''
-                    self.db_manager.execute_query(query, ("teacher1", hashed_password, "John Smith", "john.smith@school.com", "teacher"))
-                    print("Default teacher account created: teacher1 / teacher123")
-            else:
-                print("Database connection not available, using file-based storage")
-                self.create_users_file()
-                
-        except Error as e:
-            print(f"Error creating users table: {e}")
-            self.create_users_file()
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            self.create_users_file()
-    
     def create_users_file(self):
         if not os.path.exists(self.users_file):
+            admin_password = os.getenv('ADMIN_PASSWORD')
+            teacher_password = os.getenv('TEACHER_PASSWORD')
+            
+            if not admin_password or not teacher_password:
+                print("WARNING: ADMIN_PASSWORD or TEACHER_PASSWORD is not set in the .env file!")
+                return
+            
             default_users = {
                 "admin": {
-                    "password": self.hash_password("youssef123"),
-                    "full_name": "Administrator",
-                    "email": "admin@school.com",
+                    "password": self.hash_password(admin_password),
+                    "full_name": os.getenv('ADMIN_FULL_NAME', "Administrator"),
+                    "email": os.getenv('ADMIN_EMAIL', "admin@school.com"),
                     "role": "admin",
                     "is_active": True
                 },
                 "teacher1": {
-                    "password": self.hash_password("teacher123"),
-                    "full_name": "John Smith",
-                    "email": "john.smith@school.com",
+                    "password": self.hash_password(teacher_password),
+                    "full_name": os.getenv('TEACHER_FULL_NAME', "John Smith"),
+                    "email": os.getenv('TEACHER_EMAIL', "john.smith@school.com"),
                     "role": "teacher",
                     "is_active": True
                 }
@@ -236,7 +184,6 @@ class AuthManager:
             return False
     
     def get_users_from_db(self):
-        """Get all users from database"""
         if self.db_manager and hasattr(self.db_manager, 'conn') and self.db_manager.conn:
             try:
                 users = self.db_manager.fetch_all(
@@ -249,10 +196,8 @@ class AuthManager:
         return []
     
     def add_user_to_db(self, username, password, full_name, email, role):
-        """Add a new user to database"""
         if self.db_manager and hasattr(self.db_manager, 'conn') and self.db_manager.conn:
             try:
-                # Check if user exists
                 existing = self.db_manager.fetch_one("SELECT id FROM users WHERE username = %s", (username,))
                 if existing:
                     return False
