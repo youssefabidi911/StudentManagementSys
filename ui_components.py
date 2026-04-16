@@ -1,4 +1,3 @@
-# ui_components.py
 import customtkinter as ctk
 from tkinter import messagebox, ttk
 from datetime import datetime
@@ -107,7 +106,7 @@ class DashboardView:
         
         stats_data = [
             ("Total Students", stats['total_students'], "👨‍🎓"),
-            ("Weighted Avg", f"{stats['avg_grade']}%", "📊"),
+            ("Weighted Avg", f"{stats['avg_grade']}", "📊"),
             ("Present Today", stats['today_present'], "✅"),
             ("Subjects", stats.get('total_subjects', 0), "📚")
         ]
@@ -170,7 +169,6 @@ class StudentFormView:
         )
         title.pack(pady=20)
         
-        # Form frame
         form_frame = ctk.CTkFrame(self.parent)
         form_frame.pack(pady=20, padx=50, fill="both", expand=True)
         
@@ -258,8 +256,6 @@ class GradeManagementView:
         self.create_grade_management()
     
     def create_grade_management(self):
-        """Create grade management interface"""
-        # Create scrollable main container
         main_container = ctk.CTkScrollableFrame(self.parent)
         main_container.pack(fill="both", expand=True, padx=10, pady=10)
         
@@ -278,6 +274,14 @@ class GradeManagementView:
         students = self.db.get_students()
         student_list = [f"{s['student_id']} - {s['name']}" for s in students]
         
+        if not student_list:
+            no_students_label = ctk.CTkLabel(
+                select_frame, 
+                text="No students found. Please add students first.",
+                text_color="orange"
+            )
+            no_students_label.pack(side="left", padx=10)
+        
         self.student_combo = ctk.CTkComboBox(select_frame, values=student_list, width=300)
         self.student_combo.pack(side="left", padx=10)
         
@@ -287,7 +291,7 @@ class GradeManagementView:
         ctk.CTkLabel(grade_frame, text="Subject:", font=ctk.CTkFont(size=14)).grid(row=0, column=0, padx=10, pady=10, sticky="e")
         self.subject_combo = ctk.CTkComboBox(grade_frame, values=self.SUBJECTS, width=250)
         self.subject_combo.grid(row=0, column=1, padx=10, pady=10)
-        self.subject_combo.bind(' ', self.update_coefficient_display)
+        self.subject_combo.bind('<<ComboboxSelected>>', self.update_coefficient_display)
         
         ctk.CTkLabel(grade_frame, text="Coefficient:", font=ctk.CTkFont(size=14)).grid(row=0, column=2, padx=10, pady=10, sticky="e")
         self.coefficient_label = ctk.CTkLabel(grade_frame, text="", font=ctk.CTkFont(size=14, weight="bold"))
@@ -308,7 +312,7 @@ class GradeManagementView:
         info_frame.pack(pady=10, padx=20, fill="x")
         ctk.CTkLabel(
             info_frame, 
-            text="ℹ️ Note: Coefficients are automatically assigned based on subject importance.",
+            text="Note: Coefficients are automatically assigned based on subject importance.",
             font=ctk.CTkFont(size=12),
             text_color="gray70"
         ).pack()
@@ -319,8 +323,9 @@ class GradeManagementView:
         self.avg_frame = ctk.CTkFrame(main_container)
         self.avg_frame.pack(pady=10, padx=20, fill="x")
         
-        self.student_combo.configure(command=lambda x: self.display_grades())
-        self.display_grades()
+        if student_list:
+            self.student_combo.configure(command=lambda x: self.display_grades())
+            self.display_grades()
     
     def update_coefficient_display(self, event=None):
         subject = self.subject_combo.get()
@@ -343,8 +348,8 @@ class GradeManagementView:
         
         try:
             grade = float(self.grade_entry.get())
-            if grade < 0 or grade > 100:
-                messagebox.showerror("Error", "Grade must be between 0 and 100!")
+            if grade < 0 or grade > 20:
+                messagebox.showerror("Error", "Grade must be between 0 and 20!")
                 return
             
             subject = self.subject_combo.get()
@@ -358,7 +363,7 @@ class GradeManagementView:
                 self.display_grades()
                 
         except ValueError:
-            messagebox.showerror("Error", "Please enter a valid grade!")
+            messagebox.showerror("Error", "Please enter a valid grade number!")
     
     def display_grades(self):
         for widget in self.grades_frame.winfo_children():
@@ -400,24 +405,21 @@ class GradeManagementView:
             
             tree.pack(fill="both", expand=True, padx=10, pady=10)
             
-            # Add scrollbar
             scrollbar = ttk.Scrollbar(self.grades_frame, orient="vertical", command=tree.yview)
             scrollbar.pack(side="right", fill="y")
             tree.configure(yscrollcommand=scrollbar.set)
             
             if total_coefficient > 0:
                 weighted_avg = total_weighted / total_coefficient
-                
                 semester_averages = self.db.get_semester_averages(student_id)
                 
                 avg_display_frame = ctk.CTkFrame(self.avg_frame)
                 avg_display_frame.pack(fill="x", pady=10)
                 
-                # Weighted average card
                 card1 = ctk.CTkFrame(avg_display_frame, corner_radius=10)
                 card1.pack(side="left", padx=10, pady=10, fill="both", expand=True)
                 
-                ctk.CTkLabel(card1, text="📊 Weighted Average", font=ctk.CTkFont(size=14, weight="bold")).pack(pady=5)
+                ctk.CTkLabel(card1, text="Weighted Average", font=ctk.CTkFont(size=14, weight="bold")).pack(pady=5)
                 avg_color = "green" if weighted_avg >= 10 else "orange" if weighted_avg >= 7 else "red"
                 ctk.CTkLabel(
                     card1, 
@@ -427,11 +429,10 @@ class GradeManagementView:
                 ).pack(pady=5)
                 ctk.CTkLabel(card1, text=f"Total Coefficient: {total_coefficient}", font=ctk.CTkFont(size=12)).pack()
                 
-                # Semester averages card
                 card2 = ctk.CTkFrame(avg_display_frame, corner_radius=10)
                 card2.pack(side="left", padx=10, pady=10, fill="both", expand=True)
                 
-                ctk.CTkLabel(card2, text="📚 Semester Averages", font=ctk.CTkFont(size=14, weight="bold")).pack(pady=5)
+                ctk.CTkLabel(card2, text="Semester Averages", font=ctk.CTkFont(size=14, weight="bold")).pack(pady=5)
                 
                 sem_frame = ctk.CTkFrame(card2, fg_color="transparent")
                 sem_frame.pack(pady=5)
@@ -439,11 +440,7 @@ class GradeManagementView:
                 s1_color = "green" if semester_averages['semester1'] >= 10 else "orange" if semester_averages['semester1'] >= 7 else "red"
                 s2_color = "green" if semester_averages['semester2'] >= 10 else "orange" if semester_averages['semester2'] >= 7 else "red"
                 
-                ctk.CTkLabel(
-                    sem_frame, 
-                    text="S1: ", 
-                    font=ctk.CTkFont(size=12)
-                ).pack(side="left")
+                ctk.CTkLabel(sem_frame, text="S1: ", font=ctk.CTkFont(size=12)).pack(side="left")
                 ctk.CTkLabel(
                     sem_frame, 
                     text=f"{semester_averages['semester1']:.2f}" if semester_averages['semester1'] > 0 else "N/A", 
@@ -451,11 +448,7 @@ class GradeManagementView:
                     text_color=s1_color
                 ).pack(side="left", padx=(0, 10))
                 
-                ctk.CTkLabel(
-                    sem_frame, 
-                    text="S2: ", 
-                    font=ctk.CTkFont(size=12)
-                ).pack(side="left")
+                ctk.CTkLabel(sem_frame, text="S2: ", font=ctk.CTkFont(size=12)).pack(side="left")
                 ctk.CTkLabel(
                     sem_frame, 
                     text=f"{semester_averages['semester2']:.2f}" if semester_averages['semester2'] > 0 else "N/A", 
@@ -463,11 +456,10 @@ class GradeManagementView:
                     text_color=s2_color
                 ).pack(side="left")
                 
-                # Overall average
                 card3 = ctk.CTkFrame(avg_display_frame, corner_radius=10)
                 card3.pack(side="left", padx=10, pady=10, fill="both", expand=True)
                 
-                ctk.CTkLabel(card3, text="🎯 Overall Average", font=ctk.CTkFont(size=14, weight="bold")).pack(pady=5)
+                ctk.CTkLabel(card3, text="Overall Average", font=ctk.CTkFont(size=14, weight="bold")).pack(pady=5)
                 overall_color = "green" if semester_averages['overall'] >= 10 else "orange" if semester_averages['overall'] >= 7 else "red"
                 ctk.CTkLabel(
                     card3, 
@@ -476,8 +468,7 @@ class GradeManagementView:
                     text_color=overall_color
                 ).pack(pady=5)
                 
-                # Grade status
-                status = "✅ PASSING" if weighted_avg >= 10 else "❌ FAILING"
+                status = "PASSING" if weighted_avg >= 10 else "FAILING"
                 status_color = "green" if weighted_avg >= 10 else "red"
                 ctk.CTkLabel(
                     self.avg_frame, 
@@ -485,14 +476,16 @@ class GradeManagementView:
                     font=ctk.CTkFont(size=16, weight="bold"),
                     text_color=status_color
                 ).pack(pady=5)
-                
         else:
-            ctk.CTkLabel(self.grades_frame, text="No grades found for this student", font=ctk.CTkFont(size=14)).pack(pady=20)
+            ctk.CTkLabel(
+                self.grades_frame, 
+                text="No grades found for this student. Click 'Add Grade' to add grades.",
+                font=ctk.CTkFont(size=14),
+                text_color="gray"
+            ).pack(pady=50)
 
-# Continue ui_components.py - AttendanceView, SearchView, StudentListView, StatisticsView, UserManagementView
 
 class AttendanceView:
-    """Attendance management component"""
     
     def __init__(self, parent, db_manager):
         self.parent = parent
@@ -500,7 +493,6 @@ class AttendanceView:
         self.create_attendance_view()
     
     def create_attendance_view(self):
-        """Create attendance management view"""
         title = ctk.CTkLabel(
             self.parent, 
             text="Attendance Management", 
@@ -508,7 +500,6 @@ class AttendanceView:
         )
         title.pack(pady=20)
         
-        # Date selection
         date_frame = ctk.CTkFrame(self.parent)
         date_frame.pack(pady=10, padx=20, fill="x")
         
@@ -517,7 +508,6 @@ class AttendanceView:
         self.date_entry.insert(0, datetime.now().strftime("%Y-%m-%d"))
         self.date_entry.pack(side="left", padx=10)
         
-        # Get all students
         students = self.db.get_students()
         
         if not students:
@@ -525,7 +515,6 @@ class AttendanceView:
                         font=ctk.CTkFont(size=16)).pack(pady=50)
             return
         
-        # Attendance frame with scrollbar
         attendance_container = ctk.CTkScrollableFrame(self.parent, height=400)
         attendance_container.pack(pady=20, padx=20, fill="both", expand=True)
         
@@ -554,7 +543,6 @@ class AttendanceView:
         save_btn.pack(pady=20)
     
     def save_attendance(self):
-        """Save attendance records"""
         date = self.date_entry.get()
         
         try:
@@ -567,7 +555,6 @@ class AttendanceView:
 
 
 class SearchView:
-    """Student search component"""
     
     def __init__(self, parent, db_manager):
         self.parent = parent
@@ -575,7 +562,6 @@ class SearchView:
         self.create_search_view()
     
     def create_search_view(self):
-        """Create search interface"""
         title = ctk.CTkLabel(
             self.parent, 
             text="Search Students", 
@@ -583,7 +569,6 @@ class SearchView:
         )
         title.pack(pady=20)
         
-        # Search frame
         search_frame = ctk.CTkFrame(self.parent)
         search_frame.pack(pady=20, padx=20, fill="x")
         
@@ -597,15 +582,12 @@ class SearchView:
         search_btn = ctk.CTkButton(search_frame, text="Search", command=self.perform_search)
         search_btn.pack(side="left", padx=10)
         
-        # Results frame
         self.results_frame = ctk.CTkFrame(self.parent)
         self.results_frame.pack(pady=20, padx=20, fill="both", expand=True)
         
-        # Bind Enter key to search
         self.search_entry.bind('<Return>', lambda event: self.perform_search())
     
     def perform_search(self):
-        """Perform student search"""
         for widget in self.results_frame.winfo_children():
             widget.destroy()
         
@@ -623,7 +605,7 @@ class SearchView:
             elif search_field == "Student ID":
                 query = "SELECT student_id, name, grade, email, phone FROM students WHERE student_id LIKE %s"
                 results = self.db.fetch_all(query, (f'%{search_term}%',))
-            else:  # Grade
+            else:
                 query = "SELECT student_id, name, grade, email, phone FROM students WHERE grade = %s"
                 results = self.db.fetch_all(query, (search_term,))
             
@@ -641,12 +623,10 @@ class SearchView:
                 
                 tree.pack(fill="both", expand=True, padx=10, pady=10)
                 
-                # Scrollbar
                 scrollbar = ttk.Scrollbar(self.results_frame, orient="vertical", command=tree.yview)
                 scrollbar.pack(side="right", fill="y")
                 tree.configure(yscrollcommand=scrollbar.set)
                 
-                # Result count label
                 count_label = ctk.CTkLabel(self.results_frame, text=f"Found {len(results)} student(s)", 
                                           font=ctk.CTkFont(size=12))
                 count_label.pack(pady=5)
@@ -658,7 +638,6 @@ class SearchView:
 
 
 class StudentListView:
-    """Student list component"""
     
     def __init__(self, parent, db_manager):
         self.parent = parent
@@ -666,7 +645,6 @@ class StudentListView:
         self.create_student_list()
     
     def create_student_list(self):
-        """Create student list view"""
         title = ctk.CTkLabel(
             self.parent, 
             text="Student List", 
@@ -674,7 +652,6 @@ class StudentListView:
         )
         title.pack(pady=20)
         
-        # List frame
         list_frame = ctk.CTkFrame(self.parent)
         list_frame.pack(pady=20, padx=20, fill="both", expand=True)
         
@@ -693,7 +670,6 @@ class StudentListView:
         
         tree.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # Scrollbars
         scrollbar_y = ttk.Scrollbar(list_frame, orient="vertical", command=tree.yview)
         scrollbar_y.pack(side="right", fill="y")
         tree.configure(yscrollcommand=scrollbar_y.set)
@@ -702,14 +678,12 @@ class StudentListView:
         scrollbar_x.pack(side="bottom", fill="x")
         tree.configure(xscrollcommand=scrollbar_x.set)
         
-        # Count label
         count = self.db.fetch_one("SELECT COUNT(*) as count FROM students")['count']
         count_label = ctk.CTkLabel(list_frame, text=f"Total Students: {count}", font=ctk.CTkFont(size=12))
         count_label.pack(pady=5)
 
 
 class StatisticsView:
-    """Statistics and reports component"""
     
     def __init__(self, parent, db_manager):
         self.parent = parent
@@ -717,7 +691,6 @@ class StatisticsView:
         self.create_statistics()
     
     def create_statistics(self):
-        """Create statistics view"""
         title = ctk.CTkLabel(
             self.parent, 
             text="Statistics & Reports", 
@@ -725,27 +698,19 @@ class StatisticsView:
         )
         title.pack(pady=20)
         
-        # Create scrollable frame for statistics
         stats_container = ctk.CTkScrollableFrame(self.parent)
         stats_container.pack(pady=20, padx=20, fill="both", expand=True)
         
-        # Grade distribution
         self.create_grade_distribution(stats_container)
-        
-        # Attendance statistics
         self.create_attendance_stats(stats_container)
-        
-        # Top students
         self.create_top_students(stats_container)
     
     def create_grade_distribution(self, parent):
-        """Create grade distribution section with weighted averages"""
         grade_frame = ctk.CTkFrame(parent)
         grade_frame.pack(pady=10, padx=10, fill="x")
         
-        ctk.CTkLabel(grade_frame, text="📊 Grade Distribution (Weighted)", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=10)
+        ctk.CTkLabel(grade_frame, text="Grade Distribution (Weighted)", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=10)
         
-        # Get weighted grade distribution
         distribution = self.db.fetch_all('''
             SELECT 
                 CASE 
@@ -770,11 +735,9 @@ class StatisticsView:
                     frame = ctk.CTkFrame(grade_frame)
                     frame.pack(fill="x", pady=5, padx=20)
                     
-                    # Grade level and average
                     info_text = f"{grade_data['grade_level']} (Avg: {grade_data['avg_grade']:.1f})"
                     ctk.CTkLabel(frame, text=info_text, width=200, anchor="w").pack(side="left", padx=10)
                     
-                    # Progress bar (using coefficient weight instead of count)
                     percentage = (grade_data['total_coefficient'] / total_coeff) * 100
                     progress = ctk.CTkProgressBar(frame, width=300)
                     progress.pack(side="left", padx=10)
@@ -782,7 +745,7 @@ class StatisticsView:
                     
                     ctk.CTkLabel(
                         frame, 
-                        text=f"Coef: {grade_data['total_coefficient']} ({percentage:.1f}%)", 
+                        text=f"Coef: {grade_data['total_coefficient']} ({percentage:.1f})", 
                         width=150
                     ).pack(side="left", padx=10)
             else:
@@ -791,13 +754,11 @@ class StatisticsView:
             ctk.CTkLabel(grade_frame, text="No grade data available", font=ctk.CTkFont(size=14)).pack(pady=20)
     
     def create_attendance_stats(self, parent):
-        """Create attendance statistics section"""
         att_frame = ctk.CTkFrame(parent)
         att_frame.pack(pady=20, padx=10, fill="x")
         
-        ctk.CTkLabel(att_frame, text="📅 Attendance Overview", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=10)
+        ctk.CTkLabel(att_frame, text="Attendance Overview", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=10)
         
-        # Check if there are any attendance records first
         total_count = self.db.fetch_one("SELECT COUNT(*) as total FROM attendance")
         
         if total_count and total_count['total'] > 0:
@@ -822,7 +783,7 @@ class StatisticsView:
                     frame = ctk.CTkFrame(att_frame)
                     frame.pack(fill="x", pady=5, padx=20)
                     
-                    emoji = "✅" if att_data['status'] == 'Present' else "⏰" if att_data['status'] == 'Late' else "❌"
+                    emoji = "✓" if att_data['status'] == 'Present' else "⏰" if att_data['status'] == 'Late' else "✗"
                     ctk.CTkLabel(frame, text=f"{emoji} {att_data['status']}", width=150, anchor="w").pack(side="left", padx=10)
                     
                     progress = ctk.CTkProgressBar(frame, width=300)
@@ -839,17 +800,15 @@ class StatisticsView:
                     ctk.CTkLabel(frame, text=f"{att_data['count']} records ({att_data['percentage']}%)", 
                                width=150).pack(side="left", padx=10)
         else:
-            ctk.CTkLabel(att_frame, text="📭 No attendance records found", font=ctk.CTkFont(size=14)).pack(pady=20)
+            ctk.CTkLabel(att_frame, text="No attendance records found", font=ctk.CTkFont(size=14)).pack(pady=20)
     
     def create_top_students(self, parent):
-        """Create top students section using weighted averages"""
         top_frame = ctk.CTkFrame(parent)
         top_frame.pack(pady=20, padx=10, fill="x")
         
-        ctk.CTkLabel(top_frame, text="🏆 Top Performing Students (Weighted by Coefficient)", 
+        ctk.CTkLabel(top_frame, text="Top Performing Students (Weighted by Coefficient)", 
                     font=ctk.CTkFont(size=20, weight="bold")).pack(pady=10)
         
-        # Calculate weighted average for each student
         top_students = self.db.fetch_all('''
             SELECT 
                 s.name, 
@@ -876,18 +835,17 @@ class StatisticsView:
                 avg = student['weighted_avg']
                 color = "green" if avg >= 10 else "orange" if avg >= 7 else "red"
                 
-                ctk.CTkLabel(frame, text=f"Weighted Average: {avg}%", 
+                ctk.CTkLabel(frame, text=f"Weighted Average: {avg}", 
                            font=ctk.CTkFont(weight="bold"),
                            text_color=color).pack(side="left", padx=10)
                 
-                status = "✅" if avg >= 10 else "❌"
+                status = "✓" if avg >= 10 else "✗"
                 ctk.CTkLabel(frame, text=status, font=ctk.CTkFont(size=16)).pack(side="left", padx=10)
         else:
             ctk.CTkLabel(top_frame, text="No grade data available", font=ctk.CTkFont(size=14)).pack(pady=20)
 
 
 class UserManagementView:
-    """User management component (admin only)"""
     
     def __init__(self, parent, db_manager, auth_manager):
         self.parent = parent
@@ -896,25 +854,21 @@ class UserManagementView:
         self.create_user_management()
     
     def create_user_management(self):
-        """Create user management interface"""
         title = ctk.CTkLabel(
             self.parent, 
-            text="👥 User Management", 
+            text="User Management", 
             font=ctk.CTkFont(size=30, weight="bold")
         )
         title.pack(pady=20)
         
-        # Add new user section
         add_frame = ctk.CTkFrame(self.parent)
         add_frame.pack(pady=20, padx=20, fill="x")
         
         ctk.CTkLabel(add_frame, text="Add New User", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=10)
         
-        # Form fields
         fields_frame = ctk.CTkFrame(add_frame)
         fields_frame.pack(pady=10, padx=20)
         
-        # Row 1
         row1 = ctk.CTkFrame(fields_frame)
         row1.pack(fill="x", pady=5)
         ctk.CTkLabel(row1, text="Username:", width=120).pack(side="left", padx=5)
@@ -925,7 +879,6 @@ class UserManagementView:
         self.fullname_entry = ctk.CTkEntry(row1, width=200)
         self.fullname_entry.pack(side="left", padx=5)
         
-        # Row 2
         row2 = ctk.CTkFrame(fields_frame)
         row2.pack(fill="x", pady=5)
         ctk.CTkLabel(row2, text="Email:", width=120).pack(side="left", padx=5)
@@ -933,10 +886,9 @@ class UserManagementView:
         self.email_entry.pack(side="left", padx=5)
         
         ctk.CTkLabel(row2, text="Password:", width=120).pack(side="left", padx=5)
-        self.password_entry = ctk.CTkEntry(row2, width=200, show="•")
+        self.password_entry = ctk.CTkEntry(row2, width=200, show="")
         self.password_entry.pack(side="left", padx=5)
         
-        # Row 3
         row3 = ctk.CTkFrame(fields_frame)
         row3.pack(fill="x", pady=5)
         ctk.CTkLabel(row3, text="Role:", width=120).pack(side="left", padx=5)
@@ -946,13 +898,11 @@ class UserManagementView:
         add_btn = ctk.CTkButton(add_frame, text="Add User", command=self.add_user, width=200)
         add_btn.pack(pady=10)
         
-        # User list section
         list_frame = ctk.CTkFrame(self.parent)
         list_frame.pack(pady=20, padx=20, fill="both", expand=True)
         
         ctk.CTkLabel(list_frame, text="Existing Users", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=10)
         
-        # Try to get users from database
         users = self.auth_manager.get_users_from_db()
         
         if users:
@@ -982,7 +932,6 @@ class UserManagementView:
             ctk.CTkLabel(list_frame, text="No users found", font=ctk.CTkFont(size=14)).pack(pady=20)
     
     def add_user(self):
-        """Add new user to database"""
         username = self.username_entry.get().strip()
         full_name = self.fullname_entry.get().strip()
         email = self.email_entry.get().strip()
@@ -999,12 +948,10 @@ class UserManagementView:
         
         if self.auth_manager.add_user_to_db(username, password, full_name, email, role):
             messagebox.showinfo("Success", f"User '{username}' added successfully!")
-            # Clear form
             self.username_entry.delete(0, 'end')
             self.fullname_entry.delete(0, 'end')
             self.email_entry.delete(0, 'end')
             self.password_entry.delete(0, 'end')
-            # Refresh view
             self.create_user_management()
         else:
             messagebox.showerror("Error", "Failed to add user. Username may already exist!")
