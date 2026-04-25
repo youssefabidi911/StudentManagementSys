@@ -25,5 +25,5 @@ A comprehensive student management system built with Python and MySQL, featuring
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/youssefabidi911/StudentManagementSystem.git
-   cd StudentManagementSystem
+   git clone https://github.com/youssefabidi911/StudentManagementSys.git
+   cd StudentManagementSys
